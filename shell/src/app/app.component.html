@@ -1,0 +1,79 @@
+<div class="app-container">
+  <header class="app-header">
+    <div class="header-content">
+      <h1 class="app-title">
+        <span class="logo-icon">🚀</span>
+        Micro Frontend Shell
+      </h1>
+      <div class="version-badge">Angular {{ version }}</div>
+    </div>
+  </header>
+
+  <nav class="app-navigation">
+    <div class="nav-container">
+      <a routerLink="/" class="nav-link" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+        <span class="nav-icon">🏠</span>
+        Home
+      </a>
+      <a routerLink="/mfes-via-routing" class="nav-link" routerLinkActive="active">
+        <span class="nav-icon">🔗</span>
+        Routing MFEs
+      </a>
+      <a routerLink="/mfes-via-html" class="nav-link" routerLinkActive="active">
+        <span class="nav-icon">📄</span>
+        HTML MFEs
+      </a>
+    </div>
+  </nav>
+
+  <main class="app-main">
+    <div class="content-container">
+      <!-- Home Content - Grupo 5 -->
+      <div class="home-content" *ngIf="router.url === '/'">
+        <div class="welcome-section">
+          <h2 class="welcome-title">¡Bienvenidos al Micro Frontend Shell!</h2>
+          <div class="group-info">
+            <div class="group-badge">
+              <span class="group-icon">👥</span>
+              <h3>Grupo 5</h3>
+            </div>
+            <div class="team-members">
+              <h4>Integrantes del Equipo</h4>
+              <div class="members-grid">
+                <div class="member-card">
+                  <span class="member-icon">👨‍💻</span>
+                  <p class="member-name">Fabricio Borja</p>
+                </div>
+                <div class="member-card">
+                  <span class="member-icon">👨‍💻</span>
+                  <p class="member-name">Kevin Japa</p>
+                </div>
+                <div class="member-card">
+                  <span class="member-icon">👨‍💻</span>
+                  <p class="member-name">Paul Proaño</p>
+                </div>
+                <div class="member-card">
+                  <span class="member-icon">👨‍💻</span>
+                  <p class="member-name">Jhon Llivicota</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="project-description">
+            <h4>Proyecto de Micro Frontends</h4>
+            <p>Explora nuestro proyecto de arquitectura de micro frontends utilizando Angular y Module Federation. Navega por las diferentes secciones para ver cómo se cargan los componentes remotos.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Router Outlet for other pages -->
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <div class="footer-content">
+      <p>&copy; 2025 Micro Frontend Shell Application</p>
+    </div>
+  </footer>
+</div>

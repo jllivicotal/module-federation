@@ -1,0 +1,116 @@
+<div class="checkout-container">
+  <div class="checkout-header">
+    <h2><i class="icon-shopping-cart"></i> Checkout</h2>
+    <p class="subtitle">Review your order and complete your purchase</p>
+  </div>
+
+  <div class="checkout-content">
+    <!-- Order Summary -->
+    <div class="order-summary">
+      <h3>Order Summary</h3>
+      <div class="basket-info">
+        <div class="basket-value">
+          <span class="label">Total Amount:</span>
+          <span class="value">${{ basketValue || '0.00' }}</span>
+        </div>
+        <div class="item-count">
+          <span class="label">Items:</span>
+          <span class="value">{{ itemCount }} item(s)</span>
+        </div>
+      </div>
+
+      <div class="order-items" *ngIf="orderItems.length > 0">
+        <div class="item" *ngFor="let item of orderItems">
+          <div class="item-details">
+            <span class="item-name">{{ item.name }}</span>
+            <span class="item-quantity">Qty: {{ item.quantity }}</span>
+          </div>
+          <span class="item-price">${{ item.price }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Customer Information -->
+    <div class="customer-info">
+      <h3>Delivery Information</h3>
+      <form class="checkout-form" #checkoutForm="ngForm">
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" name="email" [(ngModel)]="customerInfo.email"
+                 placeholder="Enter your email" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="firstName">First Name</label>
+            <input type="text" id="firstName" name="firstName" [(ngModel)]="customerInfo.firstName"
+                   placeholder="First name" required>
+          </div>
+          <div class="form-group">
+            <label for="lastName">Last Name</label>
+            <input type="text" id="lastName" name="lastName" [(ngModel)]="customerInfo.lastName"
+                   placeholder="Last name" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="address">Address</label>
+          <input type="text" id="address" name="address" [(ngModel)]="customerInfo.address"
+                 placeholder="Street address" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="city">City</label>
+            <input type="text" id="city" name="city" [(ngModel)]="customerInfo.city"
+                   placeholder="City" required>
+          </div>
+          <div class="form-group">
+            <label for="zipCode">ZIP Code</label>
+            <input type="text" id="zipCode" name="zipCode" [(ngModel)]="customerInfo.zipCode"
+                   placeholder="ZIP code" required>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Payment Options -->
+    <div class="payment-options">
+      <h3>Payment Method</h3>
+      <div class="payment-methods">
+        <label class="payment-method" *ngFor="let method of paymentMethods">
+          <input type="radio" name="paymentMethod" [value]="method.id"
+                 [(ngModel)]="selectedPaymentMethod">
+          <span class="payment-icon">{{ method.icon }}</span>
+          <span class="payment-name">{{ method.name }}</span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Checkout Actions -->
+  <div class="checkout-actions">
+    <button class="btn btn-secondary" (click)="goBack()">
+      <i class="icon-arrow-left"></i> Continue Shopping
+    </button>
+    <button class="btn btn-primary" (click)="checkoutHandler()"
+            [disabled]="!isFormValid()" [class.loading]="isProcessing">
+      <span *ngIf="!isProcessing">
+        <i class="icon-check"></i> Complete Order
+      </span>
+      <span *ngIf="isProcessing">
+        <i class="icon-spinner"></i> Processing...
+      </span>
+    </button>
+  </div>
+
+  <!-- Success Message -->
+  <div class="success-message" *ngIf="orderCompleted">
+    <div class="success-content">
+      <i class="icon-check-circle"></i>
+      <h3>Order Completed Successfully!</h3>
+      <p>Thank you for your purchase. You will receive a confirmation email shortly.</p>
+      <p class="order-number">Order #{{ orderNumber }}</p>
+    </div>
+  </div>
+</div>

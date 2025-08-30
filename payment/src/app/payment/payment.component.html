@@ -1,0 +1,206 @@
+<div class="payment-container">
+  <div class="payment-header">
+    <h2><i class="icon-credit-card"></i> Payment Processing</h2>
+    <p class="subtitle">Secure payment powered by advanced encryption</p>
+  </div>
+
+  <div class="payment-content">
+    <!-- Payment Summary -->
+    <div class="payment-summary">
+      <h3>Payment Summary</h3>
+      <div class="amount-display">
+        <span class="currency">$</span>
+        <span class="amount">{{ totalAmount.toFixed(2) }}</span>
+      </div>
+      <div class="payment-details">
+        <div class="detail-row">
+          <span>Subtotal:</span>
+          <span>${{ subtotal.toFixed(2) }}</span>
+        </div>
+        <div class="detail-row">
+          <span>Tax:</span>
+          <span>${{ tax.toFixed(2) }}</span>
+        </div>
+        <div class="detail-row">
+          <span>Shipping:</span>
+          <span>${{ shipping.toFixed(2) }}</span>
+        </div>
+        <div class="detail-row total">
+          <span>Total:</span>
+          <span>${{ totalAmount.toFixed(2) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment Form -->
+    <div class="payment-form-section">
+      <h3>Payment Information</h3>
+
+      <!-- Payment Method Selection -->
+      <div class="payment-methods">
+        <div class="method-tabs">
+          <button
+            *ngFor="let method of paymentMethods"
+            [class]="'method-tab ' + (selectedMethod === method.id ? 'active' : '')"
+            (click)="selectPaymentMethod(method.id)">
+            <span class="method-icon">{{ method.icon }}</span>
+            <span class="method-name">{{ method.name }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Credit Card Form -->
+      <form class="payment-form" *ngIf="selectedMethod === 'credit' || selectedMethod === 'debit'">
+        <div class="form-group">
+          <label for="cardNumber">Card Number</label>
+          <div class="card-input-wrapper">
+            <input
+              type="text"
+              id="cardNumber"
+              name="cardNumber"
+              [(ngModel)]="paymentInfo.cardNumber"
+              placeholder="1234 5678 9012 3456"
+              maxlength="19"
+              (input)="formatCardNumber($event)"
+              required>
+            <div class="card-type" [ngClass]="getCardType()">
+              {{ getCardIcon() }}
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="expiryDate">Expiry Date</label>
+            <input
+              type="text"
+              id="expiryDate"
+              name="expiryDate"
+              [(ngModel)]="paymentInfo.expiryDate"
+              placeholder="MM/YY"
+              maxlength="5"
+              (input)="formatExpiryDate($event)"
+              required>
+          </div>
+          <div class="form-group">
+            <label for="cvv">CVV</label>
+            <input
+              type="text"
+              id="cvv"
+              name="cvv"
+              [(ngModel)]="paymentInfo.cvv"
+              placeholder="123"
+              maxlength="4"
+              required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="cardName">Cardholder Name</label>
+          <input
+            type="text"
+            id="cardName"
+            name="cardName"
+            [(ngModel)]="paymentInfo.cardName"
+            placeholder="John Doe"
+            required>
+        </div>
+      </form>
+
+      <!-- PayPal Form -->
+      <div class="paypal-section" *ngIf="selectedMethod === 'paypal'">
+        <div class="paypal-info">
+          <div class="paypal-logo">PayPal</div>
+          <p>You will be redirected to PayPal to complete your payment securely.</p>
+          <div class="paypal-benefits">
+            <div class="benefit">
+              <i class="icon-shield"></i>
+              <span>Buyer Protection</span>
+            </div>
+            <div class="benefit">
+              <i class="icon-lock"></i>
+              <span>Secure Checkout</span>
+            </div>
+            <div class="benefit">
+              <i class="icon-fast"></i>
+              <span>Fast Payment</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Apple Pay Form -->
+      <div class="apple-pay-section" *ngIf="selectedMethod === 'apple'">
+        <div class="apple-pay-info">
+          <div class="apple-pay-logo">
+            <i class="icon-apple"></i> Pay
+          </div>
+          <p>Pay with Touch ID or Face ID for a quick and secure checkout.</p>
+          <div class="apple-pay-device">
+            <i class="icon-fingerprint"></i>
+            <span>Touch ID Ready</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Actions -->
+  <div class="payment-actions">
+    <button class="btn btn-secondary" (click)="goBack()">
+      <i class="icon-arrow-left"></i> Back to Checkout
+    </button>
+    <button
+      class="btn btn-primary"
+      (click)="processPayment()"
+      [disabled]="!isFormValid() || isProcessing"
+      [class.loading]="isProcessing">
+      <span *ngIf="!isProcessing">
+        <i class="icon-pay"></i> Pay ${{ totalAmount.toFixed(2) }}
+      </span>
+      <span *ngIf="isProcessing">
+        <i class="icon-spinner"></i> Processing Payment...
+      </span>
+    </button>
+  </div>
+
+  <!-- Security Notice -->
+  <div class="security-notice">
+    <div class="security-badges">
+      <div class="badge">
+        <i class="icon-shield"></i>
+        <span>SSL Encrypted</span>
+      </div>
+      <div class="badge">
+        <i class="icon-lock"></i>
+        <span>PCI Compliant</span>
+      </div>
+      <div class="badge">
+        <i class="icon-verified"></i>
+        <span>Verified Secure</span>
+      </div>
+    </div>
+    <p class="security-text">
+      Your payment information is encrypted and secure. We never store your card details.
+    </p>
+  </div>
+
+  <!-- Payment Success Modal -->
+  <div class="payment-success" *ngIf="paymentCompleted">
+    <div class="success-content">
+      <div class="success-animation">
+        <i class="icon-check-circle"></i>
+      </div>
+      <h3>Payment Successful!</h3>
+      <p>Your payment of ${{ totalAmount.toFixed(2) }} has been processed successfully.</p>
+      <div class="transaction-details">
+        <p><strong>Transaction ID:</strong> {{ transactionId }}</p>
+        <p><strong>Payment Method:</strong> {{ getSelectedMethodName() }}</p>
+        <p><strong>Date:</strong> {{ paymentDate | date:'medium' }}</p>
+      </div>
+      <button class="btn btn-primary" (click)="continueToConfirmation()">
+        Continue to Order Confirmation
+      </button>
+    </div>
+  </div>
+</div>
