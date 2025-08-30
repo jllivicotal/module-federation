@@ -7,6 +7,7 @@ import { withNavigationErrorHandler } from 'src/micro-frontends-tooling/with-nav
 import { RemoteModuleEvent } from 'src/micro-frontends-tooling/remote-module-events';
 import { LoadViaRoutingComponent } from './load-via-routing/load-via-routing.component';
 import { LoadViaHtmlComponent } from './load-via-html/load-via-html.component';
+import { CommunicationDemoComponent } from './communication-demo/communication-demo.component';
 import { environment } from 'src/environments/environment';
 import { NavigationError } from '@angular/router';
 
@@ -27,6 +28,7 @@ import { PaymentComponent as PaymentComponentViaNgOnInit } from 'src/micro-front
     AppComponent,
     LoadViaRoutingComponent,
     LoadViaHtmlComponent,
+    CommunicationDemoComponent,
   ],
   imports: [
     BrowserModule,

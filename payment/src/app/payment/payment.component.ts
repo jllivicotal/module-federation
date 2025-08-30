@@ -1,6 +1,8 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
+import { MFECommunicationService, PaymentData, PaymentResult, CartItem } from '../shared/mfe-communication.service';
 
 interface PaymentMethod {
   id: string;
@@ -22,7 +24,7 @@ interface PaymentInfo {
   templateUrl: './payment.component.html',
   styleUrls: ['./payment.component.css']
 })
-export class PaymentComponent {
+export class PaymentComponent implements OnInit, OnDestroy {
   @Input() orderTotal: number = 579.97;
 
   @Output("payment-completed")
@@ -30,6 +32,10 @@ export class PaymentComponent {
 
   @Output("back-requested")
   public backRequested: EventEmitter<void> = new EventEmitter<void>();
+
+  private subscriptions: Subscription[] = [];
+  public currentPaymentData: PaymentData | null = null;
+  public paymentInProgress: boolean = false;
 
   public paymentMethods: PaymentMethod[] = [
     { id: 'credit', name: 'Credit Card', icon: '💳' },
@@ -51,6 +57,41 @@ export class PaymentComponent {
   public paymentCompleted: boolean = false;
   public transactionId: string = '';
   public paymentDate: Date = new Date();
+
+  constructor(private communicationService: MFECommunicationService) {}
+
+  ngOnInit(): void {
+    // Listen for payment initiation from checkout
+    const paymentInitSub = this.communicationService.onEvent('payment-initiated', 'checkout')
+      .subscribe((event) => {
+        this.handlePaymentInitiation(event.payload);
+      });
+
+    // Listen for cart updates
+    const cartSub = this.communicationService.cartState$
+      .subscribe((items) => {
+        this.updateOrderFromCart(items);
+      });
+
+    this.subscriptions.push(paymentInitSub, cartSub);
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
+
+  private handlePaymentInitiation(paymentData: PaymentData): void {
+    this.currentPaymentData = paymentData;
+    this.orderTotal = paymentData.amount;
+    this.paymentInProgress = true;
+    console.log('Payment initiated with data:', paymentData);
+  }
+
+  private updateOrderFromCart(items: CartItem[]): void {
+    if (items && items.length > 0) {
+      this.orderTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    }
+  }
 
   public get subtotal(): number {
     return this.orderTotal * 0.85; // Assuming tax and shipping are included
@@ -141,23 +182,61 @@ export class PaymentComponent {
 
     this.isProcessing = true;
 
-    // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    try {
+      // Simulate payment processing
+      await new Promise(resolve => setTimeout(resolve, 3000));
 
-    this.transactionId = this.generateTransactionId();
-    this.paymentDate = new Date();
-    this.paymentCompleted = true;
-    this.isProcessing = false;
+      // Simulate random payment failure (10% chance)
+      const success = Math.random() > 0.1;
 
-    const paymentData = {
-      transactionId: this.transactionId,
-      amount: this.totalAmount,
-      paymentMethod: this.selectedMethod,
-      date: this.paymentDate,
-      success: true
-    };
+      if (success) {
+        this.transactionId = this.generateTransactionId();
+        this.paymentDate = new Date();
+        this.paymentCompleted = true;
 
-    this.paymentCompletedEvent.emit(paymentData);
+        const paymentResult: PaymentResult = {
+          success: true,
+          transactionId: this.transactionId,
+          amount: this.totalAmount
+        };
+
+        // Emit through communication service
+        this.communicationService.completePayment(paymentResult);
+
+        // Also emit the original event for backward compatibility
+        const paymentData = {
+          transactionId: this.transactionId,
+          amount: this.totalAmount,
+          paymentMethod: this.selectedMethod,
+          date: this.paymentDate,
+          success: true
+        };
+
+        this.paymentCompletedEvent.emit(paymentData);
+      } else {
+        // Simulate payment failure
+        const paymentResult: PaymentResult = {
+          success: false,
+          error: 'Payment declined by bank. Please try a different card.',
+          amount: this.totalAmount
+        };
+
+        this.communicationService.completePayment(paymentResult);
+      }
+    } catch (error) {
+      // Handle unexpected errors
+      const paymentResult: PaymentResult = {
+        success: false,
+        error: 'An unexpected error occurred during payment processing.',
+        amount: this.totalAmount
+      };
+
+      this.communicationService.reportError(error, 'payment');
+      this.communicationService.completePayment(paymentResult);
+    } finally {
+      this.isProcessing = false;
+      this.paymentInProgress = false;
+    }
   }
 
   public goBack(): void {
@@ -167,6 +246,13 @@ export class PaymentComponent {
   public continueToConfirmation(): void {
     // This would typically navigate to a confirmation page
     console.log('Navigating to confirmation page...');
+    this.communicationService.requestNavigation('confirmation', 'payment');
+  }
+
+  public retryPayment(): void {
+    this.paymentCompleted = false;
+    this.transactionId = '';
+    this.processPayment();
   }
 
   private generateTransactionId(): string {

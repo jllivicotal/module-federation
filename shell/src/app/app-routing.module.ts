@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { LoadViaRoutingComponent } from './load-via-routing/load-via-routing.component';
 import { LoadViaHtmlComponent } from './load-via-html/load-via-html.component';
+import { CommunicationDemoComponent } from './communication-demo/communication-demo.component';
 
 // Passing the basketValue input to the checkout component using the route data
 // works because the bindToComponentInputs option is set to true below
@@ -11,6 +12,10 @@ import { LoadViaHtmlComponent } from './load-via-html/load-via-html.component';
 // - https://www.freecodecamp.org/news/use-input-for-angular-route-parameters/
 // - https://itnext.io/bind-route-info-to-component-inputs-new-router-feature-1d747e559dc4
 export const routes: Routes = [
+  {
+    path: 'communication-demo',
+    component: CommunicationDemoComponent,
+  },
   {
     path: 'mfes-via-html',
     component: LoadViaHtmlComponent,

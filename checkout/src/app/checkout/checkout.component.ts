@@ -1,6 +1,8 @@
-import { Component, EventEmitter, Input, Output, VERSION } from '@angular/core';
+import { Component, EventEmitter, Input, Output, VERSION, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
+import { MFECommunicationService, PaymentResult, CartItem } from '../shared/mfe-communication.service';
 
 interface OrderItem {
   id: number;
@@ -31,7 +33,7 @@ interface PaymentMethod {
   templateUrl: './checkout.component.html',
   styleUrls: ['./checkout.component.css']
 })
-export class CheckoutComponent {
+export class CheckoutComponent implements OnInit, OnDestroy {
   @Input()
   public basketValue?: string;
 
@@ -47,6 +49,10 @@ export class CheckoutComponent {
 
   @Output("back-requested")
   public backRequested: EventEmitter<void> = new EventEmitter<void>();
+
+  private subscriptions: Subscription[] = [];
+  public paymentStatus: string = '';
+  public showPaymentFlow: boolean = false;
 
   public customerInfo: CustomerInfo = {
     email: '',
@@ -68,6 +74,37 @@ export class CheckoutComponent {
   public isProcessing: boolean = false;
   public orderCompleted: boolean = false;
   public orderNumber: string = '';
+
+  constructor(private communicationService: MFECommunicationService) {}
+
+  ngOnInit(): void {
+    // Listen for payment completion events
+    const paymentSub = this.communicationService.onEvent('payment-completed', 'payment')
+      .subscribe((event) => {
+        this.handlePaymentCompletion(event.payload);
+      });
+
+    // Listen for payment errors
+    const errorSub = this.communicationService.onEvent('error-occurred', 'payment')
+      .subscribe((event) => {
+        this.handlePaymentError(event.payload.error);
+      });
+
+    this.subscriptions.push(paymentSub, errorSub);
+
+    // Update cart state with current items
+    const cartItems: CartItem[] = this.orderItems.map(item => ({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity
+    }));
+    this.communicationService.updateCart(cartItems);
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
 
   public get itemCount(): number {
     return this.orderItems.reduce((count, item) => count + item.quantity, 0);
@@ -95,24 +132,65 @@ export class CheckoutComponent {
     }
 
     this.isProcessing = true;
+    this.paymentStatus = 'Processing...';
 
-    // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Simulate some processing time
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
-    this.orderNumber = this.generateOrderNumber();
-    this.orderCompleted = true;
-    this.isProcessing = false;
-
-    const checkoutData = {
-      timestamp: new Date(),
-      customerInfo: this.customerInfo,
-      orderItems: this.orderItems,
-      paymentMethod: this.selectedPaymentMethod,
-      totalAmount: this.totalAmount,
-      orderNumber: this.orderNumber
+    // Prepare payment data
+    const paymentData = {
+      amount: this.totalAmount,
+      currency: 'USD',
+      items: this.orderItems.map(item => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity
+      })),
+      customerInfo: this.customerInfo
     };
 
-    this.checkoutRequested.emit(checkoutData);
+    // Initiate payment through communication service
+    this.communicationService.initiatePayment(paymentData);
+    this.showPaymentFlow = true;
+    this.paymentStatus = 'Redirecting to payment...';
+  }
+
+  public handlePaymentCompletion(result: PaymentResult): void {
+    this.isProcessing = false;
+
+    if (result.success) {
+      this.orderNumber = this.generateOrderNumber();
+      this.orderCompleted = true;
+      this.paymentStatus = 'Payment completed successfully!';
+
+      const checkoutData = {
+        timestamp: new Date(),
+        customerInfo: this.customerInfo,
+        orderItems: this.orderItems,
+        paymentMethod: this.selectedPaymentMethod,
+        totalAmount: this.totalAmount,
+        orderNumber: this.orderNumber,
+        transactionId: result.transactionId
+      };
+
+      this.checkoutRequested.emit(checkoutData);
+    } else {
+      this.paymentStatus = `Payment failed: ${result.error}`;
+      this.showPaymentFlow = false;
+    }
+  }
+
+  public handlePaymentError(error: string): void {
+    this.isProcessing = false;
+    this.paymentStatus = `Error: ${error}`;
+    this.showPaymentFlow = false;
+  }
+
+  public retryPayment(): void {
+    this.paymentStatus = '';
+    this.showPaymentFlow = false;
+    this.checkoutHandler();
   }
 
   public goBack(): void {
